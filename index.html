@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>WebGIS - Parchi e Giardini Italiani</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- MarkerCluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f2eb;
+        }
+
+        /* Layout principale a due colonne */
+        .wrapper {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Menu laterale a sinistra */
+        .sidebar {
+            width: 270px;
+            background-color: #34495e;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+        }
+
+        .sidebar-header {
+            padding: 20px 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            background-color: #2c3e50;
+            border-bottom: 1px solid #4e6d8c;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .sidebar-menu li a {
+            display: block;
+            padding: 15px 20px;
+            color: #ecf0f1;
+            text-decoration: none;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #4e6d8c;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .sidebar-menu li a:hover, 
+        .sidebar-menu li a.active {
+            background-color: #2980b9;
+            color: #ffffff;
+            padding-left: 25px;
+        }
+
+        /* Box informativo esteso con specifiche geodetiche rigorose */
+        .sidebar-footer {
+            padding: 15px 20px;
+            background-color: #2c3e50;
+            border-top: 1px solid #4e6d8c;
+            font-size: 0.78rem;
+            color: #bdc3c7;
+            line-height: 1.5;
+        }
+
+        .sidebar-footer strong {
+            color: #ffffff;
+        }
+
+        /* Area principale con padding */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            height: 100vh;
+            background-color: #f5f2eb;
+        }
+
+        /* Riquadro della mappa con bordo nero sottile e posizionamento relativo per il pulsante interno */
+        .map-container {
+            flex-grow: 1;
+            background: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: 1px solid #222222;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Pulsante archivio tabellare in sovrimpressione dentro la mappa (in alto a destra) */
+        .archive-btn-overlay {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 1000;
+            background-color: #2980b9;
+            color: #ffffff;
+            padding: 8px 14px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #1b4f72;
+            transition: background-color 0.2s ease;
+        }
+
+        .archive-btn-overlay:hover {
+            background-color: #2471a3;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <!-- Menu Laterale -->
+        <nav class="sidebar">
+            <div class="sidebar-header">WebGIS Parchi e Giardini Pubblici in Italia</div>
+            <ul class="sidebar-menu">
+                <li><a href="index.html" class="active">📍 Mappa Interattiva</a></li>
+                <li><a href="archivio.php">📊 Archivio Tabellare</a></li>
+                <li><a href="chisiamo.php">ℹ Chi siamo</a>
+            </ul>
+            
+            <!-- Specifiche di Riferimento Spaziale Rigorose -->
+            <div class="sidebar-footer">
+                <strong>CRS del layer punti (ubicazione parchi e giardini pubblici):</strong> WGS 84 (EPSG:4326) in Gradi Decimali<br><br>
+                <strong>CRS della basemap:</strong> Web Mercator (EPSG:3857)
+            </div>
+        </nav>
+
+        <!-- Contenuto Destra con Riquadro e Margini -->
+        <main class="main-content">
+            <div class="map-container">
+                <!-- Pulsante Archivio interno alla mappa (in alto a destra) -->
+                <a href="archivio.php" class="archive-btn-overlay">📊 Vai all'Archivio Tabellare</a>
+                <div id="map"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- MarkerCluster JS -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+    <script>
+        // 1. Inizializzazione della mappa con baricentro bilanciato [41.8, 12.5] a zoom 6
+        var map = L.map('map').setView([41.8000, 12.5000], 6);
+
+        // 2. Tile layer OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Lettura parametri URL (se si arriva dall'archivio)
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramLat = urlParams.get('lat');
+        const paramLon = urlParams.get('lon');
+        const nomeParcoURL = urlParams.get('nome');
+
+        // Se presenti lat e lon nell'URL, impostiamo il centro temporaneo sul singolo parco
+        if (paramLat && paramLon) {
+            map.setView([parseFloat(paramLat), parseFloat(paramLon)], 16);
+        }
+
+        // 3. Richiesta asincrona dei dati dall'endpoint PHP
+        fetch('endpoint.php')
+            .then(response => response.json())
+            .then(data => {
+                var markers = L.markerClusterGroup();
+
+                data.forEach(parco => {
+                    var lat = parco.Latitudine;
+                    var lon = parco.Longitudine;
+                    var nome = parco.Nome_parco_e_indirizzo || 'Parco';
+                    var provincia = parco.Provincia || '';
+
+                    if (lat && lon) {
+                        var marker = L.marker([parseFloat(lat), parseFloat(lon)]);
+                        marker.bindPopup("<b>Parco:</b> " + nome + "<br><b>Provincia:</b> " + provincia);
+                        markers.addLayer(marker);
+                    }
+                });
+
+                // Aggiunge tutti i marker raggruppati alla mappa
+                map.addLayer(markers);
+
+                // Se siamo arrivati cliccando dall'archivio, cerchiamo il marker corrispondente per aprirne il popup
+                if (paramLat && paramLon) {
+                    markers.eachLayer(function(layer) {
+                        var pos = layer.getLatLng();
+                        if (Math.abs(pos.lat - parseFloat(paramLat)) < 0.0001 && Math.abs(pos.lng - parseFloat(paramLon)) < 0.0001) {
+                            layer.openPopup();
+                        }
+                    });
+                }
+            })
+            .catch(error => console.error('Errore nel caricamento dei dati dei parchi:', error));
+
+        // Fix per ridimensionamento mappa all'interno del riquadro
+        setTimeout(function() {
+            map.invalidateSize();
+        }, 100);
+
+        // Gestione click sul link "Chi siamo"
+        document.querySelector('a[href="#"]:not(.active)').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert("WebGIS Parchi e Giardini Pubblici in Italia\n\nRealizzato a ottobre 2026 da Renato Forte, tecnico GIS e studente del Master di II livello in Geomatica presso il CGT dell'Università di Siena (a.a. 2026), come verifica finale nell'ambito del modulo 'WebGIS e Database Spaziali' - Docente Daniele Simoncini.\n\nI dati relativi a ubicazione parchi e giardini pubblici in Italia sono stati ricavati dal file Parchi_E_Giardini.csv, scaricabile dal sito www.poigps.com (https://www.poigps.com/modules.php?name=Downloads&d_op=getit&lid=13). Tali dati non sono ufficiali e inclusivi di tutti i parchi e giardini pubblici, in quanto raccolti da utenti GPS e quindi non necessariamente completi e/o aggiornati.\n\nIl presente WebGIS costituisce semplice dimostrazione dell'utilizzo e potenzialità dei linguaggi HTML, CSS, JavaScript, PHP e della libreria Leaflet.");
+        });
+    </script>
+</body>
+</html>
