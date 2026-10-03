@@ -5,6 +5,8 @@ An interactive WebGIS application developed to explore public parks and gardens 
 ## 📌 Overview
 This project was created as a final practical examination for the *"WebGIS and Spatial Databases"* module (part of the Level II Master in Geomatics at the Center for Geo-Technologies - University of Siena, academic year 2026). It demonstrates the integration of open-source mapping libraries with custom spatial data processing workflows.
 
+> **🔗 Live Demo:** [WebGIS Parchi e Giardini - Netsons](http://renatoforte.netsons.org/webgis_parchi/)
+
 ## 🚀 Key Features
 * **Interactive Map:** Built with Leaflet, featuring OpenStreetMap basemaps and marker clustering (`leaflet.markercluster`) for optimized rendering of thousands of spatial points.
 * **Tabular Archive:** A searchable and interactive table view allowing users to inspect records and zoom directly to specific locations on the map.
